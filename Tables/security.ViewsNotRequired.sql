@@ -1,0 +1,12 @@
+CREATE TABLE [security].[ViewsNotRequired]
+(
+	Id BIGINT IDENTITY NOT NULL,
+	SchemaName VARCHAR(100) NOT NULL,
+	TableName VARCHAR(100) NOT NULL
+)
+WITH
+(
+	DISTRIBUTION = REPLICATE,
+	CLUSTERED INDEX (SchemaName ASC, TableName ASC)
+)
+GO

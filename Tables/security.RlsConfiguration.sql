@@ -1,0 +1,18 @@
+CREATE TABLE [security].[RLSConfiguration]
+(
+	RlsId BIGINT IDENTITY NOT NULL,
+	SchemaName VARCHAR(100) NOT NULL,
+	TableName VARCHAR(100) NOT NULL,
+	RowFilterColumnName VARCHAR(100) NOT NULL,
+	FilterType VARCHAR(100) NOT NUll,
+	IsEnabled BIT NOT NULL,
+	InsertedBy VARCHAR(100) NOT NULL,
+	InsertedDate DATETIME NOT NULL,
+	UpdatedBy VARCHAR(100) NOT NULL,
+	UpdatedDate DATETIME NOT NULL
+)
+WITH
+(
+	DISTRIBUTION = REPLICATE,
+	CLUSTERED INDEX (SchemaName ASC, TableName ASC, RowFilterColumnName ASC)
+)
