@@ -193,12 +193,10 @@ BEGIN TRY
 		EXEC (@dropFunctionStatement)	
 		EXEC (@Script)
 	END
-	ELSE
-	BEGIN
-		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
-		VALUES (@BatchId, @SchemaName, @ViewName, 'View', @Script)
-	END
-
+	
+	INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
+	VALUES (@BatchId, @SchemaName, @ViewName, 'View', @Script)
+	
 END TRY
 BEGIN CATCH
 	THROW;

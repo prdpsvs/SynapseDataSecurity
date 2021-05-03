@@ -54,6 +54,7 @@ BEGIN
 	DECLARE @Activity VARCHAR(MAX)
 	DECLARE @Text VARCHAR(MAX)
 	DECLARE @IsView BIT
+	DECLARE @ViewScript VARCHAR(MAX)
 	
 BEGIN TRY
 	
@@ -233,7 +234,7 @@ BEGIN TRY
 		
 
 	-- Logging @Text	
-	SET @Text = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
+	SET @ViewScript = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
 
 	IF @DeploymentIndicator = 1
 	BEGIN
@@ -242,10 +243,10 @@ BEGIN TRY
 		IF OBJECT_ID(@viewName, 'V') IS NOT NULL
 		BEGIN
 			SELECT @createViewClause = REPLACE(@createViewClause, 'CREATE VIEW' , 'ALTER VIEW')
-			SET @Text = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
+			SET @ViewScript = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
 		END
 
-		EXEC (@Text)
+		EXEC (@ViewScript)
 		
 		SET @Activity = 'Deployed View for [' + @SchemaName + '].[' + @TableOrViewName + ']'
 		EXEC [security].[InsertLog_SP] 
@@ -323,18 +324,20 @@ BEGIN TRY
 				DROP TABLE #GrantsToApply
 			END
 		END
-	END
-	ELSE
-	BEGIN
-		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
-		VALUES (@BatchId, @SchemaName, @TableOrViewName, 'Function', @Text)
-	END
 
+		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
+		VALUES (@BatchId, @SchemaName, @TableOrViewName, 'GrantStatements', @Text)
+		
+	END
+	
+	INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
+	VALUES (@BatchId, @SchemaName, @TableOrViewName, 'View', @ViewScript)
+	
 	SET @Activity = 'Generated View script for [' + @SchemaName + '].[' + @TableOrViewName + ']'	
 	EXEC [security].[InsertLog_SP] 
 	@BatchId = @BatchId
 	, @ActivityName = @Activity
-	, @Text = @Text
+	, @Text = @ViewScript
 	, @DebugIndicator = @DebugIndicator
 
 END TRY

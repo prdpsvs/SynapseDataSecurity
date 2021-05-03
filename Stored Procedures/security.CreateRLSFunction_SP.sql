@@ -189,16 +189,13 @@ BEGIN TRY
 	-- Deploy RLS function if Deployment Indicator is 1
 	IF @DeploymentIndicator = 1
 	BEGIN
-
 		EXEC (@dropFunctionStatement)	
 		EXEC (@Script)
 	END
-	ELSE
-	BEGIN
-		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
-		VALUES (@BatchId, @SchemaName, @TableName, 'View', @Script)
-	END
-
+	
+	INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
+	VALUES (@BatchId, @SchemaName, @TableName, 'View', @Script)
+	
 END TRY
 BEGIN CATCH
 	THROW;
