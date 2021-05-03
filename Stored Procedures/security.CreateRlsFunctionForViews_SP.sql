@@ -195,7 +195,7 @@ BEGIN TRY
 	END
 	
 	INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
-	VALUES (@BatchId, @SchemaName, @ViewName, 'View', @Script)
+	VALUES (@BatchId, @SchemaName, @ViewName, 'Function', @Script)
 	
 END TRY
 BEGIN CATCH
