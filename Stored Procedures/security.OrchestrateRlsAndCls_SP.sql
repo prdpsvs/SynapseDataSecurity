@@ -49,7 +49,15 @@ BEGIN
 BEGIN TRY
 
 	DECLARE @Date DATETIME
+	DECLARE @LatestDeploymentDateInUTC DATETIME
 	SET @Date = GETUTCDATE()
+
+	SELECT @LatestDeploymentDateInUTC = MAX([DeploymentTimeStampInUTC])
+	FROM [security].[DeploymentTimeStamps]
+
+	IF @LatestDeploymentDateInUTC IS NULL
+		SET @LatestDeploymentDateInUTC = @DeploymentStartDatetimeInUTC
+
 	-- Generating Batch Id for each deployment
 	SELECT @DeploymentBatchID =
 		DATEPART(second, @Date) +
@@ -109,8 +117,8 @@ BEGIN TRY
 			SELECT CAST(S.NAME AS VARCHAR(100)) AS SchemaName, CAST(T.NAME AS VARCHAR(100)) AS TableName FROM
 			SYS.TABLES T
 			INNER JOIN SYS.SCHEMAS S ON T.SCHEMA_ID = S.SCHEMA_ID
-			WHERE T.create_date >= @DeploymentStartDatetimeInUTC 
-			OR (T.create_date <= @DeploymentStartDatetimeInUTC AND @DeploymentStartDatetimeInUTC < T.modify_date)
+			WHERE T.create_date >= @LatestDeploymentDateInUTC 
+			OR (T.create_date <= @LatestDeploymentDateInUTC AND @LatestDeploymentDateInUTC < T.modify_date)
 				EXCEPT 
 			SELECT DISTINCT SchemaName, TableName FROM 
 			(
@@ -203,6 +211,11 @@ BEGIN TRY
 			SET @Counter = @Counter +1
 		END
 	END
+
+	SET @Date = GETUTCDATE()
+	INSERT INTO [security].[DeploymentTimeStamps] (DeploymentTimeStamp)
+	VALUES (@Date)
+
 END TRY
 BEGIN CATCH
     DECLARE @Error VARCHAR(MAX)
