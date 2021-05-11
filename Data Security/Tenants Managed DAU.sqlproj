@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>Tenants_Managed_DAU</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{1a9cf6fa-035b-42ba-9195-b9bcc124b508}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.SqlDwDatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>Tenants_Managed_DAU</RootNamespace>
+    <AssemblyName>Tenants_Managed_DAU</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Schemas" />
+    <Folder Include="security" />
+    <Folder Include="security\Tables" />
+    <Folder Include="security\Stored Procedures" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Schemas\security.sql" />
+    <Build Include="security\Tables\GeneratedObjectScripts.sql" />
+    <Build Include="security\Tables\FilterConfiguration.sql" />
+    <Build Include="security\Tables\DeploymentTimeStamps.sql" />
+    <Build Include="security\Tables\CLSConfiguration.sql" />
+    <Build Include="security\Tables\AccessToSecuredViewsConfiguration.sql" />
+    <Build Include="security\Tables\ViewsNotRequired.sql" />
+    <Build Include="security\Tables\RoleAssignmentsConfiguration.sql" />
+    <Build Include="security\Tables\RLSConfiguration.sql" />
+    <Build Include="security\Tables\Log.sql" />
+    <Build Include="security\Stored Procedures\GenerateClsStatement_SP.sql" />
+    <Build Include="security\Stored Procedures\CreateRlsFunctionForViews_SP.sql" />
+    <Build Include="security\Stored Procedures\CreateRlsFunction_SP.sql" />
+    <Build Include="security\Stored Procedures\CreateOrAlterView_SP.sql" />
+    <Build Include="security\Stored Procedures\AssignTenantADGroupsToDbRoles_SP.sql" />
+    <Build Include="security\Stored Procedures\PrintLogRecord_SP.sql" />
+    <Build Include="security\Stored Procedures\OrchestrateRlsAndCls_SP.sql" />
+    <Build Include="security\Stored Procedures\IterateRls_SP.sql" />
+    <Build Include="security\Stored Procedures\InsertLog_SP.sql" />
+    <Build Include="security\Stored Procedures\GenerateDeploymentReport_SP.sql" />
+    <Build Include="security\Stored Procedures\GenerateClsStatementForViews_SP.sql" />
+  </ItemGroup>
+</Project>

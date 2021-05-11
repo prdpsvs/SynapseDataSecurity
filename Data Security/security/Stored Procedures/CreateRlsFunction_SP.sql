@@ -1,6 +1,4 @@
--- For Row Level Security, each row filter will need a new function
--- For Column level security, create a view
-CREATE PROC [security].[CreateRlsFunction_SP]
+﻿CREATE PROC [security].[CreateRlsFunction_SP]
 		@BatchId BIGINT
 		, @SchemaName VARCHAR(100)
 		, @TableName VARCHAR(100)

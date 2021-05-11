@@ -1,4 +1,4 @@
-CREATE PROC [security].[CreateOrAlterView_SP]
+﻿CREATE PROC [security].[CreateOrAlterView_SP]
 		@BatchId BIGINT
 		, @SchemaName VARCHAR(100)
 		, @TableOrViewName VARCHAR(100)

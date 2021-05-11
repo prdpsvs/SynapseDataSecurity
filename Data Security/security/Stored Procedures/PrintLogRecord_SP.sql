@@ -1,4 +1,4 @@
-CREATE PROC [security].[PrintLogRecord_SP]
+﻿CREATE PROC [security].[PrintLogRecord_SP]
 		@BatchId BIGINT
 		, @ActivityName VARCHAR(500)
 		, @Text NVARCHAR(MAX)

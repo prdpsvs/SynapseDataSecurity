@@ -1,4 +1,4 @@
-CREATE PROC [security].[InsertLog_SP]
+﻿CREATE PROC [security].[InsertLog_SP]
 		@BatchId BIGINT
 		, @ActivityName VARCHAR(500)
 		, @Text NVARCHAR(MAX)

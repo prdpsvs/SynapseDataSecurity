@@ -1,4 +1,4 @@
-CREATE PROC [security].[OrchestrateRlsAndCls_SP]
+﻿CREATE PROC [security].[OrchestrateRlsAndCls_SP]
 		@DeploymentStartDatetimeInUTC DATETIME
 		, @TableList VARCHAR(MAX)
 		, @DeploymentIndicator BIT
@@ -49,13 +49,14 @@ BEGIN
 BEGIN TRY
 
 	DECLARE @Date DATETIME
+	DECLARE @IsFullDeployment BIT
 	DECLARE @LatestDeploymentDateInUTC DATETIME
 	SET @Date = GETUTCDATE()
 
 	SELECT @LatestDeploymentDateInUTC = MAX([DeploymentTimeStampInUTC])
 	FROM [security].[DeploymentTimeStamps]
 
-	IF @LatestDeploymentDateInUTC IS NULL
+	IF @LatestDeploymentDateInUTC IS NULL OR @LatestDeploymentDateInUTC = '1900-01-01 00:00:00.000'
 		SET @LatestDeploymentDateInUTC = @DeploymentStartDatetimeInUTC
 
 	-- Generating Batch Id for each deployment
@@ -84,6 +85,9 @@ BEGIN TRY
 	IF @TableList IS NOT NULL AND LEN(@TableList) > 0
 	BEGIN
 	
+		-- This not complete deployment
+		SET @IsFullDeployment = 0
+
 		-- Create temp table which contains list of tables to apply RLS and CLS
 		CREATE TABLE #tableList
 		WITH ( DISTRIBUTION = ROUND_ROBIN )
@@ -102,6 +106,9 @@ BEGIN TRY
 	END
 	ELSE
 	BEGIN
+	
+		-- This not complete deployment
+		SET @IsFullDeployment = 1
 
 		-- create a table list to refresh RLS and CLS for tables since @DeploymentStartDatetimeInUTC
 		-- but for tables in [security].[ViewsNotRequired] table.
@@ -118,7 +125,7 @@ BEGIN TRY
 			SYS.TABLES T
 			INNER JOIN SYS.SCHEMAS S ON T.SCHEMA_ID = S.SCHEMA_ID
 			WHERE T.create_date >= @LatestDeploymentDateInUTC 
-			OR (T.create_date <= @LatestDeploymentDateInUTC AND @LatestDeploymentDateInUTC < T.modify_date)
+			OR T.modify_date >= @LatestDeploymentDateInUTC  
 				EXCEPT 
 			SELECT DISTINCT SchemaName, TableName FROM 
 			(
@@ -139,30 +146,33 @@ BEGIN TRY
 		FROM #tableList
 
 	END
-
-	-- Inserting log entry
-	EXEC [security].[InsertLog_SP] 
-	@BatchId = @DeploymentBatchID
-	, @ActivityName = 'Created temp table to hold table and schema name and apply RLS and CLS........'
-	, @Text = @TableList
-	, @DebugIndicator = @DebugIndicator
-
+	
 	DECLARE @NoOfTables INT
 	SELECT @NoOfTables = COUNT(1) 
 	FROM #tableList
 
+	DECLARE @ActivityName VARCHAR(500)
 	-- Insert a log entry if no DDL changes were made since @DeploymentStartDatetimeInUTC
 	IF @NoOfTables = 0
 	BEGIN
+		SET @ActivityName = 'No# tables are modified or created since last deployment time ' + CAST(@LatestDeploymentDateInUTC AS VARCHAR) 
 		EXEC [security].[InsertLog_SP] 
 		@BatchId = @DeploymentBatchID
-		, @ActivityName = 'No of tables found........'
+		, @ActivityName = @ActivityName
 		, @Text = @NoOfTables
 		, @DebugIndicator = @DebugIndicator
 	END
 	ELSE
 	-- Iterate through tables to apply CLS and RLS 
 	BEGIN
+		
+		-- Inserting log entry
+		EXEC [security].[InsertLog_SP] 
+		@BatchId = @DeploymentBatchID
+		, @ActivityName = 'Created temp table to hold table and schema name and apply RLS and CLS........'
+		, @Text = @TableList
+		, @DebugIndicator = @DebugIndicator
+
 		DECLARE @Counter INT = 1
 		DECLARE @TableName VARCHAR(100)
 		DECLARE @SchemaName VARCHAR(100)
@@ -212,9 +222,12 @@ BEGIN TRY
 		END
 	END
 
-	SET @Date = GETUTCDATE()
-	INSERT INTO [security].[DeploymentTimeStamps] (DeploymentTimeStamp)
-	VALUES (@Date)
+	IF @IsFullDeployment = 1
+	BEGIN
+		SET @Date = GETUTCDATE()
+		INSERT INTO [security].[DeploymentTimeStamps] (DeploymentTimeStampInUTC)
+		VALUES (@Date)
+	END
 
 END TRY
 BEGIN CATCH

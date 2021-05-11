@@ -1,4 +1,4 @@
-CREATE PROC [security].[IterateRls_SP]
+﻿CREATE PROC [security].[IterateRls_SP]
 		@BatchId BIGINT
 		, @SchemaName VARCHAR(100)
 		, @TableOrViewName VARCHAR(100)

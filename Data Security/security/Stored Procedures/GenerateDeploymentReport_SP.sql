@@ -1,4 +1,4 @@
-CREATE PROC [security].[GenerateDeploymentReport_SP]
+﻿CREATE PROC [security].[GenerateDeploymentReport_SP]
 		@DeploymentBatchID BIGINT OUTPUT
 AS
 /*
