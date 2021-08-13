@@ -53,12 +53,6 @@ BEGIN TRY
 	DECLARE @LatestDeploymentDateInUTC DATETIME
 	SET @Date = GETUTCDATE()
 
-	SELECT @LatestDeploymentDateInUTC = MAX([DeploymentTimeStampInUTC])
-	FROM [security].[DeploymentTimeStamps]
-
-	IF @LatestDeploymentDateInUTC IS NULL OR @LatestDeploymentDateInUTC = '1900-01-01 00:00:00.000'
-		SET @LatestDeploymentDateInUTC = @DeploymentStartDatetimeInUTC
-
 	-- Generating Batch Id for each deployment
 	SELECT @DeploymentBatchID =
 		DATEPART(second, @Date) +
@@ -73,6 +67,14 @@ BEGIN TRY
 		, @ActivityName = 'Generated Batch Id........'
 		, @Text = @DeploymentBatchID
 		, @DebugIndicator = @DebugIndicator
+
+	-- Fetch the latest deployment timestamp if already exists
+	SELECT @LatestDeploymentDateInUTC = MAX([DeploymentTimeStampInUTC])
+	FROM [security].[DeploymentTimeStamps]
+
+	-- If no deployment timestamps exist then use the @Latest deployment timestamp
+	IF @LatestDeploymentDateInUTC IS NULL OR @LatestDeploymentDateInUTC = '1900-01-01 00:00:00.000'
+		SET @LatestDeploymentDateInUTC = @DeploymentStartDatetimeInUTC
 
 	-- Drop of the temp table if exists
 	IF OBJECT_ID(N'tempdb..#tableList') IS NOT NULL
@@ -98,9 +100,24 @@ BEGIN TRY
 		, NULL AS IsProcessed
 		FROM
 		(
+
 			SELECT CAST(SUBSTRING(TRIM(VALUE), 1, CHARINDEX('.',TRIM(VALUE))- 1) AS VARCHAR(100)) AS SchemaName
 			, CAST(SUBSTRING(TRIM(VALUE), (CHARINDEX('.',TRIM(VALUE))+1), LEN(TRIM(VALUE))) AS VARCHAR(100)) AS TableName
 			FROM STRING_SPLIT(@TableList, ';')
+			EXCEPT 
+			SELECT DISTINCT SchemaName, TableName FROM 
+			(
+				SELECT V.SchemaName AS SchemaName, T.NAME AS TableName FROM
+				[security].[ViewsNotRequired] V
+				INNER JOIN SYS.SCHEMAS S ON S.NAME = V.SchemaName
+				INNER JOIN SYS.TABLES T ON S.SCHEMA_ID = T.SCHEMA_ID
+				WHERE V.TableName = '*'
+					UNION ALL
+				SELECT SchemaName, TableName FROM
+				[security].[ViewsNotRequired]
+				WHERE TableName <> '*'
+			) DistinctTableList
+
 		) TableList
 		
 	END
@@ -121,25 +138,39 @@ BEGIN TRY
 		, NULL AS IsProcessed
 		FROM
 		(
+			
 			SELECT CAST(S.NAME AS VARCHAR(100)) AS SchemaName, CAST(T.NAME AS VARCHAR(100)) AS TableName FROM
 			SYS.TABLES T
 			INNER JOIN SYS.SCHEMAS S ON T.SCHEMA_ID = S.SCHEMA_ID
 			WHERE T.create_date >= @LatestDeploymentDateInUTC 
-			OR T.modify_date >= @LatestDeploymentDateInUTC  
-				EXCEPT 
+			OR T.modify_date >= @LatestDeploymentDateInUTC 
+				UNION ALL
+			SELECT DISTINCT SchemaName, TableName
+			FROM 
+			(
+				SELECT R.SchemaName, R.TableName FROM security.RLsConfiguration R
+				INNER JOIN SYS.SCHEMAS S ON S.NAME = LOWER(R.SchemaName)
+				INNER JOIN SYS.VIEWS T ON S.SCHEMA_ID = T.SCHEMA_ID
+				AND LOWER(R.TableName) = T.NAME
+				UNION ALL
+				SELECT R.SchemaName, R.TableName FROM security.ClsConfiguration R
+				INNER JOIN SYS.SCHEMAS S ON S.NAME = LOWER(R.SchemaName)
+				INNER JOIN SYS.VIEWS T ON S.SCHEMA_ID = T.SCHEMA_ID
+				AND LOWER(R.TableName) = T.NAME
+			) DistinctViews
+				EXCEPT
 			SELECT DISTINCT SchemaName, TableName FROM 
 			(
 				SELECT V.SchemaName AS SchemaName, T.NAME AS TableName FROM
 				[security].[ViewsNotRequired] V
-				INNER JOIN SYS.SCHEMAS S ON S.NAME = V.SchemaName
+				INNER JOIN SYS.SCHEMAS S ON S.NAME = LOWER(V.SchemaName)
 				INNER JOIN SYS.TABLES T ON S.SCHEMA_ID = T.SCHEMA_ID
 				WHERE V.TableName = '*'
 					UNION ALL
 				SELECT SchemaName, TableName FROM
 				[security].[ViewsNotRequired]
 				WHERE TableName <> '*'
-			) DistinctTableList
-			
+			) DistinctTableList					
 		) TableList
 		
 		SELECT @TableList  = STRING_AGG(SchemaName + '.' + TableName, ';')

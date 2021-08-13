@@ -195,13 +195,15 @@ BEGIN TRY
 
 	-- Construct the list of columns from system tables for @Table
 	IF @IsView = 0
-		SELECT @columnClause = STRING_AGG(CAST(ColumnName AS VARCHAR(MAX)), CHAR(13) + ',')
+		SELECT @columnClause = STRING_AGG(CAST(ColumnName AS VARCHAR(MAX)), CHAR(13) + ',') WITHIN GROUP (ORDER BY ColumnOrder ASC)
 		FROM 
 		(
-			SELECT CASE WHEN cta.ColumnName IS NOT NULL THEN 'CASE' + CHAR(13) + cta.Script + CHAR(13) + ' ELSE NULL END AS ' + cta.ColumnName
-			ELSE c.ColumnName END AS ColumnName FROM 
+			SELECT CASE WHEN cta.ColumnName IS NOT NULL THEN 'CASE' + CHAR(13) + cta.Script + CHAR(13) + ' ELSE NULL END AS [' + cta.ColumnName + ']'
+			ELSE '[' + c.ColumnName + ']' END AS ColumnName
+			, ColumnOrder FROM 
 			(
 				SELECT col.name AS ColumnName
+				, col.column_id AS ColumnOrder
 				FROM SYS.TABLES AS tab
 				INNER JOIN SYS.SCHEMAS AS sch
 					ON tab.schema_id = sch.schema_id 
@@ -210,17 +212,19 @@ BEGIN TRY
 				WHERE sch.name = @SchemaName AND tab.name = @TableOrViewName
 			) c
 			LEFT JOIN  #ClsToApply cta
-				ON c.ColumnName = cta.ColumnName
+				ON c.ColumnName = cta.ColumnName			
 		) ColumnsList
 	
 	IF @IsView = 1
-		SELECT @columnClause = STRING_AGG(CAST(ColumnName AS VARCHAR(MAX)), CHAR(13) + ',')
+		SELECT @columnClause = STRING_AGG(CAST(ColumnName AS VARCHAR(MAX)), CHAR(13) + ',') WITHIN GROUP (ORDER BY ColumnOrder ASC)
 		FROM 
 		(
-			SELECT CASE WHEN cta.ColumnName IS NOT NULL THEN 'CASE' + CHAR(13) + cta.Script + CHAR(13) + ' ELSE NULL END AS ' + cta.ColumnName
-			ELSE c.ColumnName END AS ColumnName FROM 
+			SELECT CASE WHEN cta.ColumnName IS NOT NULL THEN 'CASE' + CHAR(13) + cta.Script + CHAR(13) + ' ELSE NULL END AS [' + cta.ColumnName + ']'
+			ELSE '[' + c.ColumnName + ']' END AS ColumnName
+			, ColumnOrder FROM
 			(
 				SELECT col.name AS ColumnName
+				, col.column_id AS ColumnOrder
 				FROM SYS.Views AS tab
 				INNER JOIN SYS.SCHEMAS AS sch
 					ON tab.schema_id = sch.schema_id 
@@ -233,18 +237,15 @@ BEGIN TRY
 		) ColumnsList
 		
 
+	-- If view already exists, alter the view
+	IF OBJECT_ID(@viewName, 'V') IS NOT NULL
+		SELECT @createViewClause = REPLACE(@createViewClause, 'CREATE VIEW' , 'ALTER VIEW')	
+
 	-- Logging @Text	
-	SET @ViewScript = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
+	SET @ViewScript = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause
 
 	IF @DeploymentIndicator = 1
 	BEGIN
-
-		-- If view already exists, alter the view
-		IF OBJECT_ID(@viewName, 'V') IS NOT NULL
-		BEGIN
-			SELECT @createViewClause = REPLACE(@createViewClause, 'CREATE VIEW' , 'ALTER VIEW')
-			SET @ViewScript = @createViewClause + @selectClause + @columnClause + @fromClause + @rowFilterClause	
-		END
 
 		EXEC (@ViewScript)
 		
@@ -254,80 +255,7 @@ BEGIN TRY
 		, @ActivityName = 'View Deployment completed...'
 		, @Text = @Activity
 		, @DebugIndicator = @DebugIndicator
-
-		-- Deploy Grants on the view based on configuration in [security].[GrantSelectAccessToViews] 
-		IF @DeployGrantsIndicator = 1
-		BEGIN
-
-			IF EXISTS 
-			(
-				SELECT 1 FROM [security].[AccessToSecuredViewsConfiguration] 
-				WHERE SchemaName = @SchemaName
-			)
-			BEGIN
-
-				-- Drop the object if exists
-				IF OBJECT_ID(N'tempdb..#GrantsToApply') IS NOT NULL
-				BEGIN
-					DROP TABLE #GrantsToApply
-				END
-
-				CREATE TABLE #GrantsToApply
-				WITH
-				(
-					DISTRIBUTION = ROUND_ROBIN
-				) 
-				AS
-				SELECT ROW_NUMBER() OVER(ORDER BY GrantStatement ASC) AS Row#
-				, CAST (GrantStatement AS VARCHAR(500)) AS GrantStatement
-				FROM 
-				(
-					SELECT GrantType + ' ' + [Grant] + ' ON SCHEMA:: ' + @ViewSchemaName + ' TO [' + AdGroupOrRoleName + ']' AS GrantStatement
-					FROM [security].[AccessToSecuredViewsConfiguration]
-					WHERE SchemaName = @SchemaName
-					AND (TableName = '*' OR TableName IS NULL)
-
-					UNION ALL
-
-					SELECT GrantType + ' ' + [Grant] + ' ON ' + @viewName + ' TO [' + AdGroupOrRoleName + ']' AS GrantStatement
-					FROM [security].[AccessToSecuredViewsConfiguration]
-					WHERE SchemaName = @SchemaName
-					AND TableName = @TableOrViewName
-				) Grants
-				SET @Counter = 1			
-
-				DECLARE @Query NVARCHAR(MAX), @NoOfGrants INT
-
-				SELECT @NoOfGrants = COUNT(1)
-				FROM #GrantsToApply
-
-				SELECT @Text = STRING_AGG (GrantStatement, CHAR(13)) 
-				FROM #GrantsToApply 
-
-				SET @Activity = 'Grant Statements for ' + @viewName
-				EXEC [security].[InsertLog_SP] 
-				@BatchId = @BatchId
-				, @ActivityName = @Activity
-				, @Text = @Text
-				, @DebugIndicator = @DebugIndicator
-
-				WHILE @Counter <= @NoOfGrants
-				BEGIN				
-					SELECT @Query = GrantStatement
-					FROM #GrantsToApply
-					WHERE Row# = @Counter
-
-					EXEC (@Query)
-					SET @Counter = @Counter + 1
-								
-				END
-				DROP TABLE #GrantsToApply
-			END
-		END
-
-		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
-		VALUES (@BatchId, @SchemaName, @TableOrViewName, 'GrantStatements', @Text)
-		
+				
 	END
 	
 	INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
@@ -340,6 +268,78 @@ BEGIN TRY
 	, @Text = @ViewScript
 	, @DebugIndicator = @DebugIndicator
 
+	-- Manage Grants
+	IF EXISTS 
+	(
+		SELECT 1 FROM [security].[AccessToSecuredViewsConfiguration] 
+		WHERE SchemaName = @SchemaName
+	)
+	BEGIN
+
+		-- Drop the object if exists
+		IF OBJECT_ID(N'tempdb..#GrantsToApply') IS NOT NULL
+		BEGIN
+			DROP TABLE #GrantsToApply
+		END
+
+		CREATE TABLE #GrantsToApply
+		WITH
+		(
+			DISTRIBUTION = ROUND_ROBIN
+		) 
+		AS
+		SELECT ROW_NUMBER() OVER(ORDER BY GrantStatement ASC) AS Row#
+		, CAST (GrantStatement AS VARCHAR(500)) AS GrantStatement
+		FROM 
+		(
+			SELECT GrantType + ' ' + [Grant] + ' ON SCHEMA:: ' + @ViewSchemaName + ' TO [' + AdGroupOrRoleName + ']' AS GrantStatement
+			FROM [security].[AccessToSecuredViewsConfiguration]
+			WHERE SchemaName = @SchemaName
+			AND (TableName = '*' OR TableName IS NULL)
+
+			UNION ALL
+
+			SELECT GrantType + ' ' + [Grant] + ' ON ' + @viewName + ' TO [' + AdGroupOrRoleName + ']' AS GrantStatement
+			FROM [security].[AccessToSecuredViewsConfiguration]
+			WHERE SchemaName = @SchemaName
+			AND TableName = @TableOrViewName
+		) Grants
+		SET @Counter = 1			
+
+		DECLARE @Query NVARCHAR(MAX), @NoOfGrants INT
+
+		SELECT @NoOfGrants = COUNT(1)
+		FROM #GrantsToApply
+
+		SELECT @Text = STRING_AGG (GrantStatement, CHAR(13)) 
+		FROM #GrantsToApply 
+
+		SET @Activity = 'Grant Statements for ' + @viewName
+		EXEC [security].[InsertLog_SP] 
+		@BatchId = @BatchId
+		, @ActivityName = @Activity
+		, @Text = @Text
+		, @DebugIndicator = @DebugIndicator
+
+		IF @DeployGrantsIndicator = 1
+		BEGIN
+
+			WHILE @Counter <= @NoOfGrants
+			BEGIN				
+				SELECT @Query = GrantStatement
+				FROM #GrantsToApply
+				WHERE Row# = @Counter
+
+
+				EXEC (@Query)
+				SET @Counter = @Counter + 1
+								
+			END
+		END
+		INSERT INTO [security].[GeneratedObjectScripts] (BatchId, SchemaName, TableName, ScriptType, Script)
+		VALUES (@BatchId, @SchemaName, @TableOrViewName, 'GrantStatements', @Text)
+		DROP TABLE #GrantsToApply
+	END
 END TRY
 BEGIN CATCH
     DECLARE @Error VARCHAR(MAX)

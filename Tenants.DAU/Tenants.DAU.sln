@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31205.134
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Tenants Managed DAU", "Tenants Managed DAU.sqlproj", "{1A9CF6FA-035B-42BA-9195-B9BCC124B508}"
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Tenants.DAU", "Tenants.DAU.sqlproj", "{1A9CF6FA-035B-42BA-9195-B9BCC124B508}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <Name>Tenants_Managed_DAU</Name>
+    <Name>Tenants.DAU</Name>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>4.1</ProjectVersion>
     <ProjectGuid>{1a9cf6fa-035b-42ba-9195-b9bcc124b508}</ProjectGuid>
@@ -11,8 +11,8 @@
     <OutputType>Database</OutputType>
     <RootPath>
     </RootPath>
-    <RootNamespace>Tenants_Managed_DAU</RootNamespace>
-    <AssemblyName>Tenants_Managed_DAU</AssemblyName>
+    <RootNamespace>Tenants.DAU</RootNamespace>
+    <AssemblyName>Tenants.DAU</AssemblyName>
     <ModelCollation>1033, CI</ModelCollation>
     <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
     <DeployToDatabase>True</DeployToDatabase>

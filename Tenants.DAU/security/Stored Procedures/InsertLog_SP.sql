@@ -46,6 +46,11 @@ BEGIN TRY
 END TRY
 BEGIN CATCH
     PRINT 'Error in inserting log to security.log table' ;
+	PRINT @BatchId
+	PRINT @ActivityName
+	PRINT @Text
+	PRINT @DebugIndicator
+
 	THROW;
 END CATCH
 END
