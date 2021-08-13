@@ -1,59 +1,59 @@
-# kp-azure-a20tnt-synapse
-This repository will house A20 tenant specific synapse resources. Please reach out to [Vamsee Lakkaraju](mailto:vamsee.lakkaraju@kp.org) or [Adbul H. Havaldar](mailto:abdul.h.havaldar@kp.org) for any issues related to version control and broken links in this documentation.
+# Synapse - Data Security
+This repository will house Synapse security solution.
 
-# Tenants Managed Data Access & Use folder 
-Tenants Managed Data Access & Use folder contains 
+# Data Access & Use solution
+Managed Data Access & Use folder contains 
 1. code to deploy data access automated views and functions to apply Row & Column Level Security.
 2. code to deploy select/view definition grants on views and schemas after views are created automatically
 3. code to assign AD Group roles to database roles
 
-## Deploy Tenants Managed Data Access & Use Solution On Tenants Synapse Instance
+## Deploy Managed Data Access & Use Solution On  Synapse Instance
 
 ### Manual Deployment
-1. Create a schema security on Tenant database
+1. Create a schema security on database
 ```T-SQL
     CREATE SCHEMA security;
 ```
-2. Deploy all tables in [master branch](https://github.kp.org/CSG/kp-azure-a20tnt-synapse/tree/master/Tenants%20Managed%20Data%20Access%20%26%20Use/Tables) in any order.
+2. Deploy all tables in main branch in any order.
 
-3. Deploy all Stored Procedures in [master branch](https://github.kp.org/CSG/kp-azure-a20tnt-synapse/tree/master/Tenants%20Managed%20Data%20Access%20%26%20Use/Stored%20Procedures) in any order.
+3. Deploy all Stored Procedures in main branch in any order.
 
 ### Automated Deployment
-Tenant can automate the DAU tenants (security solution) scripts deployment in two ways
-1. Use the Jenkins pipeline (pl_deploy_security_soln_dacpac) and deploy dacpac to a tenant database.
-2. Integrate the stages in Jenkinsfile in the tenant Jenkins pipeline and deploy security solution scripts to tenant database.
+Users can automate the DAU  (security solution) scripts deployment in two ways
+1. Use the Jenkins pipeline (pl_deploy_security_soln_dacpac) and deploy dacpac to a  database.
+2. Integrate the stages in Jenkinsfile in the  Jenkins pipeline and deploy security solution scripts to  database.
 
-**NOTE**: This section covers #1 - provide steps to deploy security solution scripts on a tenant database but not to advise or provide steps for end-end deployment of Synapse & AzDF code deployments.
+**NOTE**: This section covers #1 - provide steps to deploy security solution scripts on a  database but not to advise or provide steps for end-end deployment of Synapse & AzDF code deployments.
 
 Make sure below configuration (parameters in pipeline) is available to use Jenkins pipeline (pl_deploy_security_soln_dacpac) to deploy the security solution
 
-1. **Server Name**: Name of the tenant sql server
-2. **Database Name**: Name of the tenant sql database
+1. **Server Name**: Name of the  sql server
+2. **Database Name**: Name of the  sql database
 3. **Authentication Type**: Choose an Authentication Type to deploy dacpac file
 * Choose Authentication Type as AAD Service Principal to use Application Registration or Service Principal identities on Azure to deploy dacpac file
 * Choose Authentication Type as AD Service Account to use domain accounts to deploy dacpac file
 * Choose Authentication Type as SQL Account to use local sql accounts to deploy dacpac file 
-3. **User Name**: SQL Account with DBO or Control permissions on tenant sql database
+3. **User Name**: SQL Account with DBO or Control permissions on  sql database
 4. **Password**: Password of the sql account
 5. **Git Repo URL**: Use [kp-azure-a20tnt-synapse](https://github.kp.org/CSG/kp-azure-a20tnt-synapse) link as the GitRepoUrl parameter value
-6. **Branch Name**: Tenant has to figure out release version of security solution is deployed on Tenant database based on past deployments. Example: If tenant deployed V1.0 release in the past, then tenant should deploy next version - V2.0.
+6. **Branch Name**:  has to figure out release version of security solution is deployed on  database based on past deployments. Example: If  deployed V1.0 release in the past, then  should deploy next version - V2.0.
 
-**NOTE**: Tenant must not skip releases for deployment.  Consecutive releases are forward compatible. 
+**NOTE**:  must not skip releases for deployment.  Consecutive releases are forward compatible. 
 
-Steps to deploy the security solution on tenant database
-1. Go to Jenkins pipeline - [pl_deploy_security_soln_dacpac](https://jenkins-bluemix.kp.org/job/MSFT/job/DAU/job/pl_deploy_security_soln_dacpac/).
+Steps to deploy the security solution on  database
+1. Go to Jenkins pipeline.
 ![Jenkins Pipeline Overview](Images/pipeline_overview.png)
 2. Click on Build with parameters in the left navigation pane,  provide the required configuration and click on Build button.
 ![Build with Parameters](Images/pipeline_parameters.jpg)
 3. Check the deployment status by checking the stage view.
-![Deployment Status](Images/pipeline_deployment_status.jpg). Upon deployment verify deployment by clicking on [deployment output link]( https://jenkins-bluemix.kp.org/job/MSFT/job/DAU/job/pl_deploy_security_soln_dacpac/lastBuild/console).
+![Deployment Status](Images/pipeline_deployment_status.jpg). Upon deployment verify deployment by clicking on [deployment output link](/job/pl_deploy_security_soln_dacpac/lastBuild/console).
 
 
-## Capabilities Of Tenants Managed Data Access & Use Solution
+## Capabilities Of  Managed Data Access & Use Solution
 ### Generate and Deploy Views with Grants
-1. Tenants can choose to automatically deploy views or generate view scripts to manually deploy based on tenant deployment maturity model. This solution deploys/generates view without RLS and CLS applied if no RLS and CLS configurations are provided on a table.
+1.  can choose to automatically deploy views or generate view scripts to manually deploy based on  deployment maturity model. This solution deploys/generates view without RLS and CLS applied if no RLS and CLS configurations are provided on a table.
 
-    * When tenants execute the deployment scripts, tenants can configure different parameters to execute the automated solution. Please read the comments for each parameter.
+    * When  execute the deployment scripts,  can configure different parameters to execute the automated solution. Please read the comments for each parameter.
 
      ``` T-SQL
      DECLARE @BatchId BIGINT
@@ -68,8 +68,8 @@ Steps to deploy the security solution on tenant database
             */
             , @TableList = ''
             /*
-                If tenants choose to deploy the views, set the value to 1
-                If tenants choose to generate the view, set the value to 0
+                If  choose to deploy the views, set the value to 1
+                If  choose to generate the view, set the value to 0
                 The scripts are persisted in security.GeneratedObjectScripts table
             */
             , @DeploymentIndicator = 1
@@ -78,12 +78,12 @@ Steps to deploy the security solution on tenant database
             */
             , @DebugIndicator = 1
             /*
-                If tenants choose to generate the report for auditing or
+                If  choose to generate the report for auditing or
                 monitoring set the @GenerateReportIndicator to 1 else 0
             */
             , @GenerateReportIndicator = 1
              /*
-                If tenants choose to deploy grants on view or schema using this
+                If  choose to deploy grants on view or schema using this
                 solution set the @DeployGrantsIndicator = 1 else 0
             */
             , @DeployGrantsIndicator = 1
@@ -160,29 +160,29 @@ Steps to deploy the security solution on tenant database
     * If the table name is null, then the grants are applied on a schema.
     * The grants are applied only if the views are deployed by the solution.
 ### Role Assignments to AD Groups
-6. The automated solution allows to configure & apply grants for RLS and CLS to database roles or AD Groups. As per DAU, the RLS and CLS should applied on database roles and hence tenants need to way to assign AD Group(s) to a role(s). Following steps provide a way to configure database role assignments for AAD groups.
+6. The automated solution allows to configure & apply grants for RLS and CLS to database roles or AD Groups. As per DAU, the RLS and CLS should applied on database roles and hence  need to way to assign AD Group(s) to a role(s). Following steps provide a way to configure database role assignments for AAD groups.
 
     * Role Assigned is managed in **security.RoleAssignmentsConfiguration** table.
     
-    | RoleAssignmentId | DbRole | TenantAdGroupName | Action | Tenant | Notes | InsertedDate | IsProcessed | ProcessedStatusAndRemarks | RoleAssignmentDate |
+    | RoleAssignmentId | DbRole | AdGroupName | Action |  | Notes | InsertedDate | IsProcessed | ProcessedStatusAndRemarks | RoleAssignmentDate |
     |-----|------|-----|-----|-----|-----|------|-------|-------|--------|
     |1|ADF_RADA_MPSSN_Dev_Role|priv_group_adf_rada_mpphi_dev|add|SELECT|Test Assignment|5/7/2021|NULL|NULL|NULL|
     
     * RoledAssignmentDate and InsertedDate are in UTC.
     * Two actions are supported **ADD** OR **DROP**. Add will assign AD group to a database role. DROP will remove AD group from a database role.
 
-**NOTE:** Role Assignements are not meant to be executed as part of deployment. Role assignments should be executed frequently without any delay (inserting role assignments configuration to **security.RoleAssignmentsConfiguration** table) however tenant(s) can choose to execute role assignments at the time of code deployment also.
+**NOTE:** Role Assignements are not meant to be executed as part of deployment. Role assignments should be executed frequently without any delay (inserting role assignments configuration to **security.RoleAssignmentsConfiguration** table) however (s) can choose to execute role assignments at the time of code deployment also.
 
-Tenant(s) can execute the role assignments in two ways to support manual & frequent/automated role level executions.
+(s) can execute the role assignments in two ways to support manual & frequent/automated role level executions.
 
 ### Manual Role Assignment Execution
 
-If tenant chooses to execute role assignments at the time of code deployment or manually, please execute the following script
+If  chooses to execute role assignments at the time of code deployment or manually, please execute the following script
 
 The role assignment stored procedure will execute all role assignments where IsProcessed = NULL ![Role Assignment Not Processed](Images/role_assignments_not_processed.jpg)
 
 ``` T-SQL
-EXEC [security].[AssignTenantADGroupsToDbRoles_SP] 
+EXEC [security].[AssignADGroupsToDbRoles_SP] 
 -- Set Debug Indicator to 1 for debugging or troubleshooting purposes
 @DebugIndicator = 1
 ```
@@ -196,12 +196,12 @@ In the below example, the role assignment failed because the AAD group did not e
 
 The automated role assignment(s) execution can be implemented in many ways. The recommended way by MSFT and Architecture team is to use AzDF pipeline and schedule the stored procedure execution every 15 minutes.
 
-This AzDF pipeline must reside in tenant AzDF instance to execute the role assignments.
+This AzDF pipeline must reside in  AzDF instance to execute the role assignments.
 
-Tenant(s) must make sure to setup following pre-requisties for successful role assignment(s) execution.
+(s) must make sure to setup following pre-requisties for successful role assignment(s) execution.
 
-1. The service account used by tenant AzDF pipeline must have execute permissions on the stored procedure - [security].[AssignTenantADGroupsToDbRoles_SP]
-2. The service account used by tenant AzDF pipeline must have one of the following permissions and based on role assignment configuration(s)
+1. The service account used by  AzDF pipeline must have execute permissions on the stored procedure - [security].[AssignADGroupsToDbRoles_SP]
+2. The service account used by  AzDF pipeline must have one of the following permissions and based on role assignment configuration(s)
 	
 * Membership in the db_securityadmin or db_owner fixed database role.
 * Membership in the role that owns the role.
@@ -209,14 +209,14 @@ Tenant(s) must make sure to setup following pre-requisties for successful role a
 * Adding members to fixed database roles requires membership in the db_owner fixed database role.
 
 Please create an AzDF pipeline and configure Stored Procedure activity with
-**[security].[AssignTenantADGroupsToDbRoles_SP]** stored procedure using [this](https://ajitpatra.com/2018/11/23/azure-execute-stored-procedure-using-azure-data-factory/) reference implementation. Please note the linked service will be Azure SQL Data Warehouse type.
+**[security].[AssignADGroupsToDbRoles_SP]** stored procedure using [this](https://ajitpatra.com/2018/11/23/azure-execute-stored-procedure-using-azure-data-factory/) reference implementation. Please note the linked service will be Azure SQL Data Warehouse type.
 
 ## Considerations To Apply RLS & CLS
-1. Tenants does not have access to data/tables. Tenant users always access data via Views. Exception:  If tenants choose to not create views on a table, only then tenant users will have access to table(s).
+1.  does not have access to data/tables.  users always access data via Views. Exception:  If  choose to not create views on a table, only then  users will have access to table(s).
 2. Column Level Security is managed using CASE statements in a view and Row Level security is applied using filter predicate functions cross applied on a view.
-3. Column or Row Level Security does not change tenant’s queries structure or query patterns. The view and the underlying table columns, column(s) name and metadata of columns are same. Example: If the requirement is to protect a column (lets say MemberSSN) on a table with 6 columns, users will have access to all columns and MemberSSN column data is masked.  
+3. Column or Row Level Security does not change ’s queries structure or query patterns. The view and the underlying table columns, column(s) name and metadata of columns are same. Example: If the requirement is to protect a column (lets say MemberSSN) on a table with 6 columns, users will have access to all columns and MemberSSN column data is masked.  
 4. Table and view are same. Tables are hosted in _T schema and views are hosted in _V schema. Please note that views can be created for a table or view hosted in _T schema only.
-5. RLS is applied on a table by creating a filter predicate funtion which evaluates if tenant user has access to the row. RLS is usually applied by creating security policy on a table/column and apply filter predicate. In Azure SQL Data Warehouse (Gen2 - Synapse), a table can have one security filter. Security policies will interfer with nested RLS requirements. Due to these limitations, the solution does not offer RLS with security policies, there by tenant DBA's must audit the RLS functions using DDL audit capabilities.
+5. RLS is applied on a table by creating a filter predicate funtion which evaluates if  user has access to the row. RLS is usually applied by creating security policy on a table/column and apply filter predicate. In Azure SQL Data Warehouse (Gen2 - Synapse), a table can have one security filter. Security policies will interfer with nested RLS requirements. Due to these limitations, the solution does not offer RLS with security policies, there by  DBA's must audit the RLS functions using DDL audit capabilities.
 6. Filter predicates are applied using a function on SELECT/INSERT/UPDATE/DELETE operations on a table. A filter predicate is created for per column/table combination. Filter predicates should be audited using DDL tracking auditing.
 7. CLS is not applied using CLS (hide columns - this changes the query structure), CLE (encrypt column data - this changes the way data is queried), AE (not supported) or DDM (not secure when default or custom functions are used) in-built features. CLS is applied using case expressions with ISMEMEBER capability. 
 8. Nested CLS capability is not supported by Azure SQL Data Warehouse (Gen2 - Synapse).
